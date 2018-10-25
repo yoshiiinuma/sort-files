@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import dateFormat from 'dateformat';
 
-import { getDstPath } from '../src/dst-path.js';
+import { getDstPath } from './dst-path.js';
 
 export const exists = (file) => {
   return new Promise((resolve, reject) => {
@@ -33,8 +33,21 @@ export const moveToDst = (file, dir) => {
     .then(() => fs.remove(file));
 };
 
+export const copyToDst = (file, dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.ensureDirSync(dir);
+  }
+  return fs.ensureLink(file, path.join(dir, path.basename(file)))
+};
+
 export const sortFile = (file, opts = {}) => {
-  return getDstPath(file, opts).then((dst) => moveToDst(file, dst));
+  if (opts.dry) {
+    return getDstPath(file, opts).then((dst) => console.log(file + ' => ' + dst));
+  } if (opts.copy) {
+    return getDstPath(file, opts).then((dst) => copyToDst(file, dst));
+  }else {
+    return getDstPath(file, opts).then((dst) => moveToDst(file, dst));
+  }
 };
 
 export const getFiles = (dir) => {

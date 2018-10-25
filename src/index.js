@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-import { sortFiles, sortFile, getFiles, moveToDst, getDstPath, exists } from '../src/sort.js';
+import { sortFiles } from './sort.js';
 
 const structures = ['yyyy-mm-dd', 'yyyymm-dd', 'yyyy-mm', 'yyyymm', 'yyyymmdd'];
 
@@ -10,9 +10,13 @@ const usage = () => {
   console.log();
   console.log();
   console.log("\n   OPTIONS");
-  console.log('     -s or --sortby <STRUCT>:   sort files by this, resulting in directory structure');
+  console.log('     -h or --help:           show this message');
+  console.log('     --dry:                  dry run; do not move files (DEFAULT)');
+  console.log('     --run:                  run ');
+  console.log('     -c or --copy:           run in copy mode; do not delete src files');
+  console.log('     -s or --sortby <SORT>:  sort files by this, resulting in directory structure');
   console.log();
-  console.log('       STRUCT:')
+  console.log('       SORT:')
   console.log();
   console.log('         yyyy-mm-dd');
   console.log('         yyyymm-dd (DEFAULT)');
@@ -20,7 +24,6 @@ const usage = () => {
   console.log('         yyyymm');
   console.log('         yyyymmdd');
   console.log();
-  console.log('     -h or --help:                  show this message');
   console.log();
 }
 
@@ -43,12 +46,19 @@ if (!fs.existsSync(src)) {
   exitProgram('SRC Not Found: ' + src);
 }
 
-const stats = fs.statSync(src);
+let stats = fs.statSync(src);
 if (!stats.isDirectory()) {
-  exitProgram('Not Directory: ' + src);
+  exitProgram('SRC Not Directory: ' + src);
+}
+
+stats = fs.statSync(dst);
+if (!stats.isDirectory()) {
+  exitProgram('DST Not Directory: ' + dst);
 }
 
 let opt = {
+  dry: true,
+  copy: false,
   dstBase: dst,
   sortby: 'yyyymm-dd'
 };
@@ -57,6 +67,13 @@ while(args.length > 0) {
   let arg = args.shift();
   if (arg === '-h' || arg === '--help') {
     exitProgram();
+  } else if (arg === '--dry') {
+    opt.dry = true;
+  } else if (arg === '--run') {
+    opt.dry = false;
+  } else if (arg === '-c' || arg === '--copy') {
+    opt.dry = false;
+    opt.copy = true;
   } else if (arg === '-s' || arg === '--sortby') {
     opt.sortby = arg.shift();
   } else {
@@ -68,6 +85,5 @@ if (!structures.includes(opt.sortby)) {
   exitProgram('Unsupported Directory Structure: ' + opt.sortby);
 }
 
-console.log(opt);
-//sortFiles(src, opt);
+sortFiles(src, opt);
 
